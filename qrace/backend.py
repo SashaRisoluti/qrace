@@ -10,6 +10,7 @@ from qiskit_algorithms import IterativeAmplitudeEstimation
 from qiskit.transpiler import generate_preset_pass_manager
 
 from qrace.pricing import PricingProblem
+from qrace.resources import estimate_from
 from qrace.spec import AnalysisTarget, NoiseProfile
 from qrace.verdict import ResourceEstimate
 
@@ -48,16 +49,11 @@ class QiskitBackend:
         self.seed = seed
         self.shots = shots
 
-    def transpile_stats(self, circuit: QuantumCircuit) -> ResourceEstimate:
+    def transpile_stats(
+        self, circuit: QuantumCircuit, num_state_qubits: int | None = None
+    ) -> ResourceEstimate:
         transpiled = transpile(circuit, basis_gates=BASIS_GATES, optimization_level=1)
-        ops = transpiled.count_ops()
-        return ResourceEstimate(
-            logical_qubits=transpiled.num_qubits,
-            circuit_depth=transpiled.depth(),
-            two_qubit_gates=int(ops.get("cx", 0)),
-            t_count=0,  # basis has no T gates; Clifford+T synthesis is out of scope in v0.1
-            ancilla=0,  # refined by resources.estimate_from in the advisor pipeline
-        )
+        return estimate_from(transpiled, num_state_qubits=num_state_qubits)
 
     def noise_model(self, noise: NoiseProfile) -> NoiseModel | None:
         if noise.kind == "ideal":
