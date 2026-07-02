@@ -25,6 +25,7 @@ dependencies = [
     "qiskit-aer==0.17.2",
     "qiskit-algorithms==0.4.0",
     "qiskit-finance==0.4.1",
+    "qiskit-ibm-runtime==0.47.0",
     "financepy==1.0.1",
     "numpy==2.4.6",
     "pandas==3.0.3",
@@ -53,5 +54,6 @@ python_version = "3.11"
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["financepy.*"]
+module = ["financepy.*", "qiskit.*", "qiskit_algorithms.*", "qiskit_finance.*", "qiskit_aer.*", "qiskit_ibm_runtime.*"]
 ignore_missing_imports = true
+implicit_reexport = true
