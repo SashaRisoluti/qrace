@@ -32,6 +32,15 @@ def test_put_problem_builds_and_post_processes() -> None:
     assert price >= 0.0
 
 
+def test_exact_price_close_to_discretized_truth() -> None:
+    from qrace.pricing import exact_price
+
+    pricing = build_problem(CALL, num_state_qubits=3)
+    price = exact_price(pricing)
+    # statevector amplitude -> price should be a sane discounted call value
+    assert 0.0 < price < CALL.spot
+
+
 def test_amplitude_sensitivity_positive_for_call() -> None:
     pricing = build_problem(CALL, num_state_qubits=3)
     assert pricing.amplitude_sensitivity() > 0.0

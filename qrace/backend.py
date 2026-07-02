@@ -33,7 +33,9 @@ class EstimationResult:
 
 
 class Backend(Protocol):
-    def transpile_stats(self, circuit: QuantumCircuit) -> ResourceEstimate: ...
+    def transpile_stats(
+        self, circuit: QuantumCircuit, num_state_qubits: int | None = None
+    ) -> ResourceEstimate: ...
 
     def run_estimation(
         self, pricing: PricingProblem, noise: NoiseProfile, target: AnalysisTarget

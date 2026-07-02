@@ -31,6 +31,15 @@ def test_mc_samples_for_monotone_decreasing_in_error() -> None:
     assert counts[0] > counts[-1]
 
 
+def test_discounted_payoff_std_positive_and_seeded() -> None:
+    from qrace.classical import discounted_payoff_std
+
+    a = discounted_payoff_std(CALL, samples=10_000, seed=0)
+    b = discounted_payoff_std(CALL, samples=10_000, seed=0)
+    assert a > 0
+    assert a == b
+
+
 def test_monte_carlo_converges_to_analytic() -> None:
     coarse = monte_carlo_price(CALL, samples=2_000, seed=42)
     fine = monte_carlo_price(CALL, samples=500_000, seed=42)

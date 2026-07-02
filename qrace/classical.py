@@ -52,6 +52,11 @@ def monte_carlo_price(option: OptionSpec, samples: int, seed: int) -> float:
     return float(_discounted_payoffs(option, samples, seed).mean())
 
 
+def discounted_payoff_std(option: OptionSpec, samples: int = 10_000, seed: int = 0) -> float:
+    """Standard deviation of the discounted payoff, from a seeded pilot run."""
+    return float(_discounted_payoffs(option, samples, seed).std(ddof=1))
+
+
 def mc_samples_for(
     option: OptionSpec,
     target: AnalysisTarget,
@@ -62,6 +67,6 @@ def mc_samples_for(
 
     sigma is the discounted-payoff standard deviation, estimated from a seeded pilot run.
     """
-    sigma = float(_discounted_payoffs(option, pilot_samples, seed).std(ddof=1))
+    sigma = discounted_payoff_std(option, pilot_samples, seed)
     z = NormalDist().inv_cdf(0.5 + target.confidence / 2)
     return math.ceil((z * sigma / target.target_abs_error) ** 2)

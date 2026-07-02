@@ -6,8 +6,10 @@ Verified against qiskit==2.4.2, qiskit-algorithms==0.4.0, qiskit-finance==0.4.1.
 import math
 from dataclasses import dataclass
 
+import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import LinearAmplitudeFunction
+from qiskit.quantum_info import Statevector
 from qiskit_algorithms import EstimationProblem
 from qiskit_finance.circuit.library import LogNormalDistribution
 
@@ -26,6 +28,8 @@ class PricingProblem:
     circuit: QuantumCircuit  # the A operator (state preparation)
     num_state_qubits: int
     discount: float  # exp(-r * T)
+    grid: np.ndarray  # discretized asset values of the uncertainty model
+    probabilities: np.ndarray  # probabilities on the grid
 
     def interpret_amplitude(self, amplitude: float) -> float:
         """Map a raw amplitude to a discounted price in currency units."""
@@ -37,6 +41,17 @@ class PricingProblem:
         lo = self.interpret_amplitude(0.5 - delta)
         hi = self.interpret_amplitude(0.5 + delta)
         return abs(hi - lo) / (2 * delta)
+
+
+def exact_price(pricing: PricingProblem) -> float:
+    """Noise-free discounted price implied by the exact circuit amplitude (statevector).
+
+    Isolates the payoff-encoding approximation from QAE statistics and hardware noise.
+    """
+    state = Statevector(pricing.circuit)
+    objective = pricing.problem.objective_qubits[0]
+    probabilities = state.probabilities([objective])
+    return pricing.interpret_amplitude(float(probabilities[1]))
 
 
 def build_problem(
@@ -96,5 +111,10 @@ def build_problem(
     )
     discount = math.exp(-option.rate * option.maturity)
     return PricingProblem(
-        problem=problem, circuit=circuit, num_state_qubits=num_state_qubits, discount=discount
+        problem=problem,
+        circuit=circuit,
+        num_state_qubits=num_state_qubits,
+        discount=discount,
+        grid=np.asarray(uncertainty.values),
+        probabilities=np.asarray(uncertainty.probabilities),
     )
