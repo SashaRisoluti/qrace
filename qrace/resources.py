@@ -5,7 +5,9 @@ from qiskit import QuantumCircuit
 from qrace.verdict import ResourceEstimate
 
 
-def estimate_from(transpiled: QuantumCircuit, num_state_qubits: int | None = None) -> ResourceEstimate:
+def estimate_from(
+    transpiled: QuantumCircuit, num_state_qubits: int | None = None
+) -> ResourceEstimate:
     """Extract qubit/depth/gate counts from an already-transpiled circuit.
 
     Ancilla = qubits beyond the state register and the single objective qubit,

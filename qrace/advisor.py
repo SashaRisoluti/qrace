@@ -65,8 +65,7 @@ def analyze(
         crossover=crossover,
         shapley=shapley,
         quantum_advantageous=(
-            crossover.quantum_wins_in_queries
-            and required_fidelity <= ACHIEVABLE_TWO_QUBIT_FIDELITY
+            crossover.quantum_wins_in_queries and required_fidelity <= ACHIEVABLE_TWO_QUBIT_FIDELITY
         ),
     )
 

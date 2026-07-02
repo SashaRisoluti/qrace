@@ -26,9 +26,7 @@ def test_estimate_within_tolerance_of_reference(verdict: Verdict) -> None:
 
 
 def test_shapley_efficiency_holds(verdict: Verdict) -> None:
-    assert (
-        abs(sum(verdict.shapley.contributions.values()) - verdict.shapley.total) < 1e-9
-    )
+    assert abs(sum(verdict.shapley.contributions.values()) - verdict.shapley.total) < 1e-9
 
 
 def test_quantum_advantageous_consistent(verdict: Verdict) -> None:

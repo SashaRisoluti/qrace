@@ -17,7 +17,12 @@ def sample_verdict() -> Verdict:
             breakeven_error=0.005,
         ),
         shapley=ShapleyBudget(
-            contributions={"loading": 0.01, "payoff": 0.02, "qae_iters": 0.005, "decoherence": 0.015},
+            contributions={
+                "loading": 0.01,
+                "payoff": 0.02,
+                "qae_iters": 0.005,
+                "decoherence": 0.015,
+            },
             total=0.05,
         ),
         quantum_advantageous=False,

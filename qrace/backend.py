@@ -63,9 +63,7 @@ class QiskitBackend:
         if noise.kind == "depolarizing":
             model = NoiseModel()
             assert noise.two_qubit_error is not None  # enforced by NoiseProfile validation
-            model.add_all_qubit_quantum_error(
-                depolarizing_error(noise.two_qubit_error, 2), ["cx"]
-            )
+            model.add_all_qubit_quantum_error(depolarizing_error(noise.two_qubit_error, 2), ["cx"])
             return model
         # fake_backend
         import qiskit_ibm_runtime.fake_provider as fake_provider
@@ -90,9 +88,7 @@ class QiskitBackend:
             epsilon_target=epsilon,
             alpha=1 - target.confidence,
             sampler=sampler,
-            transpiler=generate_preset_pass_manager(
-                optimization_level=1, basis_gates=BASIS_GATES
-            ),
+            transpiler=generate_preset_pass_manager(optimization_level=1, basis_gates=BASIS_GATES),
         )
         result = iae.estimate(pricing.problem)
         low, high = result.confidence_interval_processed

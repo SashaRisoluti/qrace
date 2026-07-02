@@ -58,9 +58,7 @@ class ReportResult:
             label="QAE estimate (noise-aware)",
         )
         ax.plot(x, self.table["classical_reference"], "x", label="classical reference")
-        labels = [
-            f"{row.kind}@{row.strike}\n{row.noise}" for row in self.table.itertuples()
-        ]
+        labels = [f"{row.kind}@{row.strike}\n{row.noise}" for row in self.table.itertuples()]
         ax.set_xticks(list(x))
         ax.set_xticklabels(labels, fontsize=8)
         ax.set_ylabel("discounted price")

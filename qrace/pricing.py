@@ -71,9 +71,7 @@ def build_problem(
     low = max(0.0, mean - stddev_range * std)
     high = mean + stddev_range * std
 
-    uncertainty = LogNormalDistribution(
-        num_state_qubits, mu=mu, sigma=sigma**2, bounds=(low, high)
-    )
+    uncertainty = LogNormalDistribution(num_state_qubits, mu=mu, sigma=sigma**2, bounds=(low, high))
 
     strike = option.strike
     if option.kind == "european_call":

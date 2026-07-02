@@ -17,4 +17,6 @@ def test_public_api_exported_at_top_level() -> None:
 
     assert callable(analyze)
     assert callable(run_report)
-    assert all(x is not None for x in (OptionSpec, AnalysisTarget, NoiseProfile, Verdict, QiskitBackend))
+    assert all(
+        x is not None for x in (OptionSpec, AnalysisTarget, NoiseProfile, Verdict, QiskitBackend)
+    )
