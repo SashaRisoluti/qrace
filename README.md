@@ -2,6 +2,17 @@
 
 > **"Would a quantum computer actually help price *my* derivative — and if so, what would it cost?"**
 
+> ### Key finding
+> For a European call (S = 100, K = 105, T = 1y, σ = 20%) priced to ±0.5 at 95% confidence, **quantum amplitude estimation is not advantageous today**:
+> - it needs **12,288 oracle calls** against **2,622 classical Monte Carlo samples**;
+> - meeting the target would require a two-qubit gate fidelity of **0.999983**; with a 0.1% depolarising error the noisy estimate is **11.87 ± 0.35** against a Black-Scholes price of **8.02**;
+> - the exact Shapley decomposition of the error budget shows that **decoherence dominates** every other stage (state loading, payoff encoding, QAE iterations).
+>
+> ![Measured QAE oracle calls vs classical Monte Carlo samples across target accuracy](docs/img/crossover.png)
+> *Measured noisy-IAE oracle calls never drop below Monte Carlo samples for ε from 2 down to 0.05, so there is no break-even in that range. Regenerate with `python scripts/crossover_figure.py` (cached; `--rerun` repeats the ~2 h simulation).*
+>
+> **Why this matters for risk teams:** before investing in quantum pricing pilots, a bank needs a reproducible way to ask *"at what accuracy and hardware fidelity would this pay off?"*. qrace answers it with resource counts, required two-qubit fidelity and an error budget, for any option spec and noise profile.
+
 `qrace` is an **honesty layer** on top of quantum amplitude estimation for option pricing.
 Given a derivative spec, a target accuracy, and a hardware noise profile, it returns a
 structured **verdict**: the quantum resources required, the two-qubit gate fidelity you would
@@ -46,17 +57,17 @@ verdict = analyze(option, target, QiskitBackend(seed=7), noise)
 A real run of the above (seeded, reproducible):
 
 ```text
-resource:                     11 qubits, depth 381, 192 two-qubit gates
+resource:                     11 qubits, depth 383, 192 two-qubit gates
 required_two_qubit_fidelity:  0.999983          # what the target accuracy demands
-noise_aware_estimate:         11.85 +/- 0.35    # what a noisy device actually returns
+noise_aware_estimate:         11.87 +/- 0.35    # what a noisy device actually returns
 classical_reference:          8.02              # FinancePy Black-Scholes ground truth
 crossover:                    12288 quantum oracle calls vs 2622 classical MC samples
-shapley error budget:         loading -0.12 | payoff +0.38 | qae_iters -0.01 | decoherence +3.58
+shapley error budget:         loading -0.12 | payoff +0.38 | qae_iters -0.01 | decoherence +3.59
 quantum_advantageous:         False
 ```
 
 The verdict is blunt: at a realistic two-qubit error rate of 10⁻³, decoherence owns
-3.58 of the 3.83 total error budget, the fidelity required (0.999983) exceeds anything
+3.59 of the 3.84 total error budget, the fidelity required (0.999983) exceeds anything
 deployed today, and at this target accuracy classical Monte Carlo needs *fewer* samples
 than the quantum algorithm needs oracle calls. Quantum does not help here — and now you
 know why, stage by stage.
