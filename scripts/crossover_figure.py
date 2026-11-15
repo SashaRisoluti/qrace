@@ -14,6 +14,7 @@ import csv
 import math
 import sys
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -21,8 +22,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+import qrace.backend  # noqa: E402
 from qrace import AnalysisTarget, NoiseProfile, OptionSpec, QiskitBackend  # noqa: E402
-from qrace.classical import discounted_payoff_std  # noqa: E402
+from qrace.classical import discounted_payoff_std, reference_price  # noqa: E402
 from qrace.crossover import compute  # noqa: E402
 from qrace.pricing import build_problem  # noqa: E402
 
@@ -36,23 +38,58 @@ OPTION = OptionSpec(
 )
 
 
+class _RecordingIAE(qrace.backend.IterativeAmplitudeEstimation):  # type: ignore[misc]
+    """Keeps the last raw IAE result so the Grover power schedule can be cached."""
+
+    last: Any = None
+
+    def estimate(self, estimation_problem: Any) -> Any:
+        _RecordingIAE.last = super().estimate(estimation_problem)
+        return _RecordingIAE.last
+
+
 def simulate() -> None:
     """Run noisy IAE at every epsilon and write the cache."""
+    # shortcut: script-local patch to read IAE internals; move into EstimationResult if reused
+    qrace.backend.IterativeAmplitudeEstimation = _RecordingIAE  # type: ignore[misc]
+    reference = reference_price(OPTION)
     noise = NoiseProfile(kind="depolarizing", two_qubit_error=0.001)
     backend = QiskitBackend(seed=7)
     pricing = build_problem(OPTION)
     sigma = discounted_payoff_std(OPTION)
     IMG.mkdir(parents=True, exist_ok=True)
     with CACHE.open("w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["epsilon", "qae_oracle_calls", "mc_samples"])
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(
+            [
+                "epsilon",
+                "qae_oracle_calls",
+                "mc_samples",
+                "noisy_estimate",
+                "ci_half_width",
+                "abs_error_vs_reference",
+                "iae_rounds",
+                "max_grover_power",
+            ]
+        )
         for eps in EPSILONS:
             target = AnalysisTarget(target_abs_error=eps, confidence=CONFIDENCE)
-            calls = backend.run_estimation(pricing, noise, target).oracle_calls
+            res = backend.run_estimation(pricing, noise, target)
+            powers = _RecordingIAE.last.powers
             samples = compute(sigma, target).classical_mc_samples
-            writer.writerow([eps, calls, samples])
+            row = [
+                eps,
+                res.oracle_calls,
+                samples,
+                round(res.estimate, 4),
+                round(res.error, 4),
+                round(abs(res.estimate - reference), 4),
+                len(powers) - 1,
+                max(powers),
+            ]
+            writer.writerow(row)
             f.flush()
-            print(f"eps={eps:<5}  QAE oracle calls={calls:>7}  MC samples={samples:>7}")
+            print(dict(zip(["eps", "calls", "mc", "est", "ci", "abs_err", "rounds", "kmax"], row)))
 
 
 def plot() -> None:
@@ -73,14 +110,28 @@ def plot() -> None:
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5), dpi=150)
     ax.loglog(dense, n_dense, color=BLUE, lw=2, label="classical MC samples N(ε)")
-    ax.loglog(
-        eps, quantum, color=ORANGE, lw=2, marker="o", ms=7, label="QAE oracle calls, measured"
-    )
+    missed = [float(r["abs_error_vs_reference"]) > e for r, e in zip(rows, eps, strict=True)]
+    ax.loglog(eps, quantum, color=ORANGE, lw=2, label="QAE oracle calls, measured")
+    hit = [(e, q) for e, q, m in zip(eps, quantum, missed, strict=True) if not m]
+    miss = [(e, q) for e, q, m in zip(eps, quantum, missed, strict=True) if m]
+    if hit:
+        ax.plot(*zip(*hit, strict=True), "o", color=ORANGE, ms=7, label="target accuracy reached")
+    if miss:
+        ax.plot(
+            *zip(*miss, strict=True),
+            "o",
+            mfc="white",
+            mec=ORANGE,
+            mew=2,
+            ms=8,
+            label="target not reached (|estimate − BS| > ε)",
+        )
     ax.invert_xaxis()  # tighter accuracy to the right
     ax.set_xlabel("target absolute price error ε (tighter →)", color=INK)
     ax.set_ylabel("queries / samples", color=INK)
     ax.set_title(
-        f"Demo call, 0.1% depolarising noise: no crossover for ε ≥ {min(eps):g}",
+        f"Demo call, 0.1% depolarising noise: no crossover for ε ≥ {min(eps):g}\n"
+        f"{sum(missed)} of {len(eps)} points miss the target accuracy",
         color=INK,
         fontsize=10,
         loc="left",

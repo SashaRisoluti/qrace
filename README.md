@@ -4,12 +4,13 @@
 
 > ### Key finding
 > For a European call (S = 100, K = 105, T = 1y, σ = 20%) priced to ±0.5 at 95% confidence, **quantum amplitude estimation is not advantageous today**:
-> - it needs **12,288 oracle calls** against **2,622 classical Monte Carlo samples**;
+> - it spends **12,288 oracle calls** against **2,622 classical Monte Carlo samples**, and still misses the target;
 > - meeting the target would require a two-qubit gate fidelity of **0.999983**; with a 0.1% depolarising error the noisy estimate is **11.87 ± 0.35** against a Black-Scholes price of **8.02**;
+> - the noisy run never reaches its target accuracy: at every ε from 2 down to 0.05 the estimate sits **≈ 3.84** above Black-Scholes while IAE reports a confidence interval of ±0.35 or tighter, because that interval captures sampling noise, not decoherence bias;
 > - the exact Shapley decomposition of the error budget shows that **decoherence dominates** every other stage (state loading, payoff encoding, QAE iterations).
 >
 > ![Measured QAE oracle calls vs classical Monte Carlo samples across target accuracy](docs/img/crossover.png)
-> *Measured noisy-IAE oracle calls never drop below Monte Carlo samples for ε from 2 down to 0.05, so there is no break-even in that range. Regenerate with `python scripts/crossover_figure.py` (cached; `--rerun` repeats the ~2 h simulation).*
+> *Measured noisy-IAE oracle calls stay above Monte Carlo samples for ε from 2 down to 0.05. Hollow markers: target not reached (|estimate − Black-Scholes| > ε), which applies to all six runs, so there is no valid break-even in that range. Regenerate with `python scripts/crossover_figure.py` (cached; `--rerun` repeats the ~2 h simulation).*
 >
 > **Why this matters for risk teams:** before investing in quantum pricing pilots, a bank needs a reproducible way to ask *"at what accuracy and hardware fidelity would this pay off?"*. qrace answers it with resource counts, required two-qubit fidelity and an error budget, for any option spec and noise profile.
 
